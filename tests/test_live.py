@@ -43,12 +43,17 @@ class AuthorizeLiveTests(TestCase):
         self.assertRaises(AuthorizeResponseError, transaction.settle)
 
     def test_saved_card(self):
-        card = self.client.card(self.credit_card, self.address)
+        card = self.client.card(self.credit_card, self.address, email="test@here.com", description="description")
         saved = card.save()
+        profile = saved.profile()['profile']
+        self.assertEqual(profile['email'], 'test@here.com')
+        self.assertEqual(profile['description'], 'description')
         saved.auth(self.amount1).settle()
         saved.capture(self.amount1)
         saved_from_id = self.client.saved_card(saved.uid)
         saved_from_id.delete()
+
+
 
     def test_recurring(self):
         card = self.client.card(self.credit_card, self.address)
