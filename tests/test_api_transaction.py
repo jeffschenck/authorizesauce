@@ -119,8 +119,8 @@ class TransactionAPITests(TestCase):
             '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
             '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
             '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
-            '&x_exp_date=01-2022&x_test_request=FALSE&x_card_code=911'
-            '&x_type=AUTH_ONLY&x_delim_data=TRUE')
+            '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
+            '&x_type=AUTH_ONLY&x_delim_data=TRUE'.format(str(self.year)))
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urllib.urlopen')
@@ -132,8 +132,8 @@ class TransactionAPITests(TestCase):
             '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
             '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
             '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
-            '&x_exp_date=01-2022&x_test_request=FALSE&x_card_code=911'
-            '&x_type=AUTH_CAPTURE&x_delim_data=TRUE')
+            '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
+            '&x_type=AUTH_CAPTURE&x_delim_data=TRUE'.format(str(self.year)))
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urllib.urlopen')
