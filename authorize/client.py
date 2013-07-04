@@ -47,7 +47,7 @@ class AuthorizeClient(object):
         self._recurring = RecurringAPI(login_id, transaction_key, debug, test)
         self._customer = CustomerAPI(login_id, transaction_key, debug, test)
 
-    def card(self, credit_card, address=None):
+    def card(self, credit_card, address=None, email=None, description=None):
         """
         To work with a credit card, pass in a
         :class:`CreditCard <authorize.data.CreditCard>` instance, and
@@ -56,7 +56,7 @@ class AuthorizeClient(object):
         :class:`AuthorizeCreditCard <authorize.client.AuthorizeCreditCard>`
         instance you can then use to execute transactions.
         """
-        return AuthorizeCreditCard(self, credit_card, address=address)
+        return AuthorizeCreditCard(self, credit_card, address=address, email=email, description=description)
 
     def transaction(self, uid):
         """
@@ -94,10 +94,12 @@ class AuthorizeCreditCard(object):
     Any operation performed on this instance returns another instance you can
     work with, such as a transaction, saved card, or recurring payment.
     """
-    def __init__(self, client, credit_card, address=None):
+    def __init__(self, client, credit_card, address=None, email=None, description=None):
         self._client = client
         self.credit_card = credit_card
         self.address = address
+        self.email = email
+        self.description = description
 
     def __repr__(self):
         return '<AuthorizeCreditCard {0.credit_card.card_type} ' \
@@ -141,7 +143,7 @@ class AuthorizeCreditCard(object):
         payment = self._client._customer.create_saved_payment(
             self.credit_card, address=self.address)
         profile_id, payment_ids = self._client._customer \
-            .create_saved_profile(unique_id, [payment])
+            .create_saved_profile(unique_id, [payment], self.email, self.description)
         uid = '{0}|{1}'.format(profile_id, payment_ids[0])
         return self._client.saved_card(uid)
 
@@ -310,6 +312,10 @@ class AuthorizeSavedCard(object):
         transaction = self._client.transaction(response['transaction_id'])
         transaction.full_response = response
         return transaction
+
+    def profile(self):
+        response = self._client._customer.get_saved_profile(self._profile_id)
+        return response
 
     def delete(self):
         """
