@@ -39,6 +39,8 @@ class TransactionAPI(object):
         }
 
     def _make_call(self, params):
+        for key, val in params.iteritems():
+            params[key] = val.encode('utf8')
         params = urllib.urlencode(params)
         url = '{0}?{1}'.format(self.url, params)
         try:
