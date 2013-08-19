@@ -1,3 +1,4 @@
+# coding: utf-8
 """
 Tests against the sandbox Authorize.net API. Slow, requires internet.
 """
@@ -33,7 +34,7 @@ class AuthorizeLiveTests(TestCase):
         self.client = AuthorizeClient(TEST_LOGIN_ID, TEST_TRANSACTION_KEY)
         self.year = date.today().year + 10
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911',
-            'Jeff', 'Schenck')
+            u"jåff", u'Sch∂nck')
         self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
 
     def test_credit_card(self):
