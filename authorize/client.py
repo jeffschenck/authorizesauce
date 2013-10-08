@@ -58,6 +58,17 @@ class AuthorizeClient(object):
         """
         return AuthorizeCreditCard(self, credit_card, address=address)
 
+    def check(self, bank_account, address=None):
+        """
+        To work with a bank_account, pass in a
+        :class:`BankAccount <authorize.data.BankAccount>` instance, and
+        optionally an :class:`Address <authorize.data.Address>` instance. This
+        will return an
+        :class:`AuthorizeBankAccount <authorize.client.AuthorizeBankAccount>`
+        instance you can then use to execute transactions.
+        """
+        return AuthorizeBankAccount(self, bank_account, address=address)
+
     def transaction(self, uid):
         """
         To perform an action on a previous transaction, pass in the ``uid`` of
@@ -75,6 +86,15 @@ class AuthorizeClient(object):
         instance you can then use to auth, capture, or create a credit.
         """
         return AuthorizeSavedCard(self, uid)
+
+    def saved_check(self, uid):
+        """
+        To create a new transaction from a saved card, pass in the ``uid`` of
+        the saved card as a string. This will return an
+        :class:`AuthorizeSavedCard <authorize.client.AuthorizeSavedCard>`
+        instance you can then use to auth, capture, or create a credit.
+        """
+        return AuthorizeSavedAccount(self, uid)
 
     def recurring(self, uid):
         """
@@ -139,7 +159,7 @@ class AuthorizeCreditCard(object):
         """
         unique_id = uuid4().hex[:20]
         payment = self._client._customer.create_saved_payment(
-            self.credit_card, address=self.address)
+            credit_card=self.credit_card, address=self.address)
         profile_id, payment_ids = self._client._customer \
             .create_saved_profile(unique_id, [payment])
         uid = '{0}|{1}'.format(profile_id, payment_ids[0])
@@ -184,6 +204,111 @@ class AuthorizeCreditCard(object):
         """
         uid = self._client._recurring.create_subscription(
             self.credit_card, amount, start, days=days, months=months,
+            occurrences=occurrences, trial_amount=trial_amount,
+            trial_occurrences=trial_occurrences)
+        return self._client.recurring(uid)
+
+
+class AuthorizeBankAccount(object):
+    """
+    This is the interface for working with a bank account. You use this to
+    authorize or charge a bank account via ach, as well as saving the bank
+    account and creating recurring payments.
+
+    Any operation performed on this instance returns another instance you can
+    work with, such as a transaction, saved account, or recurring payment.
+    """
+
+    def __init__(self, client, bank_account, address=None):
+        self._client = client
+        self.bank_account = bank_account
+        self.address = address
+
+    def __repr__(self):
+        return '<AuthorizeBankAccount {0.bank_account.card_type} ' \
+               '{0.bank_account.safe_number}>'.format(self)
+
+    def auth(self, amount):
+        """
+        Authorize a transaction against this account for the specified amount.
+        This verifies the amount is available on the account and reserves it.
+        Returns an
+        :class:`AuthorizeTransaction <authorize.client.AuthorizeTransaction>`
+        instance representing the transaction.
+        """
+        response = self._client._transaction.auth(
+            amount, self.bank_account, self.address)
+        transaction = self._client.transaction(response['transaction_id'])
+        transaction.full_response = response
+        return transaction
+
+    def capture(self, amount):
+        """
+        Capture a transaction immediately on this account for the specified
+        amount. Returns an
+        :class:`AuthorizeTransaction <authorize.client.AuthorizeTransaction>`
+        instance representing the transaction.
+        """
+        response = self._client._transaction.capture(
+            amount, self.bank_account, self.address)
+        transaction = self._client.transaction(response['transaction_id'])
+        transaction.full_response = response
+        return transaction
+
+    def save(self):
+        """
+        Saves the bank account on Authorize.net's servers so you can create
+        transactions at a later date. Returns an
+        :class:`AuthorizeSavedAccount <authorize.client.AuthorizeSavedAccount>`
+        instance that you can save or use.
+        """
+        unique_id = uuid4().hex[:20]
+        payment = self._client._customer.create_saved_payment(
+            bank_account=self.bank_account, address=self.address)
+        profile_id, payment_ids = self._client._customer \
+            .create_saved_profile(unique_id, [payment])
+        uid = '{0}|{1}'.format(profile_id, payment_ids[0])
+        return self._client.saved_card(uid)
+
+    def recurring(self, amount, start, days=None, months=None,
+                  occurrences=None, trial_amount=None, trial_occurrences=None):
+        """
+        Creates a recurring payment with this bank account. Pass in the
+        following arguments to set it up:
+
+        ``amount``
+            The amount to charge at each interval.
+
+        ``start``
+            The ``date`` or ``datetime`` at which to begin the recurring
+            charges.
+
+        ``days``
+            The number of days in the billing cycle. You must provide either
+            the ``days`` argument or the ``months`` argument.
+
+        ``months``
+            The number of months in the billing cycle. You must provide either
+            the ``days`` argument or the ``months`` argument.
+
+        ``occurrences`` *(optional)*
+            The number of times the card should be billed before stopping. If
+            not specified, it will continue indefinitely.
+
+        ``trial_amount`` *(optional)*
+            If you want to charge a lower amount for an introductory period,
+            specify the amount.
+
+        ``trial_occurrences`` *(optional)*
+            If you want to charge a lower amount for an introductory period,
+            specify the number of occurrences that period should last.
+
+        Returns an
+        :class:`AuthorizeRecurring <authorize.client.AuthorizeRecurring>`
+        instance that you can save, update or delete.
+        """
+        uid = self._client._recurring.create_subscription(
+            self.bank_account, amount, start, days=days, months=months,
             occurrences=occurrences, trial_amount=trial_amount,
             trial_occurrences=trial_occurrences)
         return self._client.recurring(uid)
@@ -278,11 +403,21 @@ class AuthorizeSavedCard(object):
     """
     def __init__(self, client, uid):
         self._client = client
-        self.uid = uid
+        self._uid = uid
         self._profile_id, self._payment_id = uid.split('|')
 
     def __repr__(self):
         return '<AuthorizeSavedCard {0.uid}>'.format(self)
+
+    @property
+    def uid(self):
+        return self._uid
+    @property
+    def profile_id(self):
+        return self._profile_id
+    @property
+    def payment_id(self):
+        return self._payment_id
 
     def auth(self, amount):
         """
@@ -314,6 +449,73 @@ class AuthorizeSavedCard(object):
     def delete(self):
         """
         Removes this saved card from the Authorize.net database.
+        """
+        self._client._customer.delete_saved_payment(
+            self._profile_id, self._payment_id)
+
+class AuthorizeSavedAccount(object):
+    """
+    This is the interface for working with a saved bank account. It is returned
+    by the
+    :meth:`AuthorizeBankAccount.save <authorize.client.AuthorizeBankAccount.save>`
+    method, or you can save a saved account's ``uid`` and reinstantiate it later.
+
+    You can then use this saved accpimt to create new authorizations, captures,
+    and credits. Or you can delete this account from the Authorize.net database.
+    The first three operations will all return a transaction instance to work
+    with.
+    """
+
+    def __init__(self, client, uid):
+        self._client = client
+        self._uid = uid
+        self._profile_id, self._payment_id = uid.split('|')
+
+    def __repr__(self):
+        return '<AuthorizeSavedAccount {0.uid}>'.format(self)
+
+    @property
+    def uid(self):
+        return self._uid
+
+    @property
+    def profile_id(self):
+        return self._profile_id
+
+    @property
+    def payment_id(self):
+        return self._payment_id
+
+    def auth(self, amount):
+        """
+        Authorize a transaction against this account for the specified amount.
+        This verifies the amount is available on the account and reserves it.
+        Returns an
+        :class:`AuthorizeTransaction <authorize.client.AuthorizeTransaction>`
+        instance representing the transaction.
+        """
+        response = self._client._customer.auth(
+            self._profile_id, self._payment_id, amount)
+        transaction = self._client.transaction(response['transaction_id'])
+        transaction.full_response = response
+        return transaction
+
+    def capture(self, amount):
+        """
+        Capture a transaction immediately on this account for the specified
+        amount. Returns an
+        :class:`AuthorizeTransaction <authorize.client.AuthorizeTransaction>`
+        instance representing the transaction.
+        """
+        response = self._client._customer.capture(
+            self._profile_id, self._payment_id, amount)
+        transaction = self._client.transaction(response['transaction_id'])
+        transaction.full_response = response
+        return transaction
+
+    def delete(self):
+        """
+        Removes this saved account from the Authorize.net database.
         """
         self._client._customer.delete_saved_payment(
             self._profile_id, self._payment_id)
