@@ -140,7 +140,7 @@ class BankAccount(object):
             num = map(int, self.account_number)
         except ValueError:
             raise AuthorizeInvalidError('Bank account number is not valid.')
-        if not (17 >= len(num) >= 4):
+        if not (len(num) >=4 and len(num) <= 17):
             raise AuthorizeInvalidError('Bank account number is not valid.')
 
     @property
