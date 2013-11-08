@@ -9,7 +9,6 @@ import re
 
 from authorize.exceptions import AuthorizeInvalidError
 
-
 CARD_TYPES = {
     'visa': r'4\d{12}(\d{3})?$',
     'amex': r'37\d{13}$',
@@ -18,6 +17,7 @@ CARD_TYPES = {
     'diners': r'(30[0-5]\d{11}|(36|38)\d{12})$'
 }
 ACCOUNT_TYPES = ('checking', 'savings')
+
 
 class CreditCard(object):
     """
@@ -92,20 +92,20 @@ class CreditCard(object):
             if re.match(card_type_re, self.card_number):
                 return card_type
 
+
 class BankAccount(object):
     """
     Represents a bank account that can be charged.
     
-    Pass in the bank account number, expiration date, CVV code, and optionally
-    a first name and last name. The account will be validated upon instatiation
+    Pass in a US bank account number, expiration date, CVV code, and optionally
+    a first name and last name. The account will be validated upon instantiation
     and will raise an
     :class:`AuthorizeInvalidError <authorize.exceptions.AuthorizeInvalidError>`
     for invalid bank account numbers, past expiration dates, etc.
     """
-    def __init__(self, bank_name=None, account_type=None, routing_number=None,
-                 account_number=None, name=None, echeck_type='WEB',
-                 customer_type='individual'):
-        self.bank_name = bank_name
+    def __init__(self, bank_name=None, account_type=None,
+                 routing_number=None, account_number=None, name=None,
+                 echeck_type='WEB', customer_type='individual'):
         self.account_type = account_type
         self.routing_number = re.sub(r'\D', '', str(routing_number))
         self.account_number = re.sub(r'\D', '', str(account_number))
@@ -126,22 +126,36 @@ class BankAccount(object):
         if anything doesn't check out. You shouldn't have to call this
         yourself.
         """
+        self._validate_aba_micr(self.routing_number)
         if not self.bank_name:
             raise AuthorizeInvalidError('Bank name is not valid.')
         if not self.account_type:
             raise AuthorizeInvalidError('Bank account type is not valid.')
-        try:
-            num = map(int, self.routing_number)
-        except ValueError:
-            raise AuthorizeInvalidError('Bank routing number is not valid.')
-        if len(num) != 9:
-            raise AuthorizeInvalidError('Bank routing number is not valid.')
         try:
             num = map(int, self.account_number)
         except ValueError:
             raise AuthorizeInvalidError('Bank account number is not valid.')
         if not (len(num) >=4 and len(num) <= 17):
             raise AuthorizeInvalidError('Bank account number is not valid.')
+
+    @staticmethod
+    def _validate_aba_micr(routing_number):
+        """
+        Validates a US ABA standard MICR routing number and raises an
+        :class:`AuthorizeInvalidError <authorize.exceptions.AuthorizeInvalidError>`
+        if anything doesn't check out.
+        """
+        try:
+            num = map(int, routing_number)
+        except (ValueError, TypeError):
+            raise AuthorizeInvalidError('Bank routing number is not valid.')
+        if len(routing_number) != 9:
+            raise AuthorizeInvalidError('Bank routing number is not valid.')
+        checksum = (7 * (num[0] + num[3] + num[6]) +
+                    3 * (num[1] + num[4] + num[7]) +
+                    9 * (num[2] + num[5])) % 10
+        if num[8] != checksum:
+            raise AuthorizeInvalidError('Bank routing number is not valid.')
 
     @property
     def safe_number(self):
