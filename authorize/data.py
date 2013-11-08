@@ -9,7 +9,6 @@ import re
 
 from authorize.exceptions import AuthorizeInvalidError
 
-
 CARD_TYPES = {
     'visa': r'4\d{12}(\d{3})?$',
     'amex': r'37\d{13}$',
@@ -17,6 +16,8 @@ CARD_TYPES = {
     'discover': r'6011\d{12}',
     'diners': r'(30[0-5]\d{11}|(36|38)\d{12})$'
 }
+ACCOUNT_TYPES = ('checking', 'savings')
+
 
 class CreditCard(object):
     """
@@ -90,6 +91,81 @@ class CreditCard(object):
         for card_type, card_type_re in CARD_TYPES.items():
             if re.match(card_type_re, self.card_number):
                 return card_type
+
+
+class BankAccount(object):
+    """
+    Represents a bank account that can be charged.
+    
+    Pass in a US bank account number, expiration date, CVV code, and optionally
+    a first name and last name. The account will be validated upon instantiation
+    and will raise an
+    :class:`AuthorizeInvalidError <authorize.exceptions.AuthorizeInvalidError>`
+    for invalid bank account numbers, past expiration dates, etc.
+    """
+    def __init__(self, bank_name=None, account_type=None,
+                 routing_number=None, account_number=None, name=None,
+                 echeck_type='WEB', customer_type='individual'):
+        self.account_type = account_type
+        self.routing_number = re.sub(r'\D', '', str(routing_number))
+        self.account_number = re.sub(r'\D', '', str(account_number))
+        self.name = name
+        self.first_name = name.split(' ')[0]
+        self.last_name = name.split(' ')[-1]
+        self.echeck_type = echeck_type
+        self.customer_type = customer_type
+        self.validate()
+
+    def __repr__(self):
+        return '<BankAccount {0.account_type} {0.safe_number}>'.format(self)
+
+    def validate(self):
+        """
+        Validates the bank account data and raises an
+        :class:`AuthorizeInvalidError <authorize.exceptions.AuthorizeInvalidError>`
+        if anything doesn't check out. You shouldn't have to call this
+        yourself.
+        """
+        self._validate_aba_micr(self.routing_number)
+        if not self.bank_name:
+            raise AuthorizeInvalidError('Bank name is not valid.')
+        if not self.account_type:
+            raise AuthorizeInvalidError('Bank account type is not valid.')
+        try:
+            num = map(int, self.account_number)
+        except ValueError:
+            raise AuthorizeInvalidError('Bank account number is not valid.')
+        if not (len(num) >=4 and len(num) <= 17):
+            raise AuthorizeInvalidError('Bank account number is not valid.')
+
+    @staticmethod
+    def _validate_aba_micr(routing_number):
+        """
+        Validates a US ABA standard MICR routing number and raises an
+        :class:`AuthorizeInvalidError <authorize.exceptions.AuthorizeInvalidError>`
+        if anything doesn't check out.
+        """
+        try:
+            num = map(int, routing_number)
+        except (ValueError, TypeError):
+            raise AuthorizeInvalidError('Bank routing number is not valid.')
+        if len(routing_number) != 9:
+            raise AuthorizeInvalidError('Bank routing number is not valid.')
+        checksum = (7 * (num[0] + num[3] + num[6]) +
+                    3 * (num[1] + num[4] + num[7]) +
+                    9 * (num[2] + num[5])) % 10
+        if num[8] != checksum:
+            raise AuthorizeInvalidError('Bank routing number is not valid.')
+
+    @property
+    def safe_number(self):
+        """
+        The bank account number with all but the last four digits masked. This
+        is useful for storing a representation of the account without keeping
+        sensitive data.
+        """
+        mask = '*' * (len(self.account_number) - 4)
+        return '{0}{1}'.format(mask, self.account_number[-4:])
 
 class Address(object):
     """

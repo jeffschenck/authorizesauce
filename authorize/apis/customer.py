@@ -79,32 +79,56 @@ class CustomerAPI(object):
             payment_ids = response.customerPaymentProfileIdList[0]
         return profile_id, payment_ids
 
-    def create_saved_payment(self, credit_card, address=None, profile_id=None):
+    def create_saved_payment(self, credit_card=None, bank_account=None,
+                             address=None, profile_id=None):
         """
         Creates a payment profile. If profile_id is provided, this payment
         profile will be created in Authorize.net attached to that profile.
         If it is not provided, the payment profile will be returned and can
         be provided in a list to the create_profile call.
         """
+        assert (credit_card or bank_account) is not None
+
         # Create the basic payment profile with credit card details
         payment_profile = self.client.factory.create(
             'CustomerPaymentProfileType')
         customer_type_enum = self.client.factory.create('CustomerTypeEnum')
         payment_profile.customerType = customer_type_enum.individual
         payment_type = self.client.factory.create('PaymentType')
-        credit_card_type = self.client.factory.create('CreditCardType')
-        credit_card_type.cardNumber = credit_card.card_number
-        credit_card_type.expirationDate = '{0.exp_year}-{0.exp_month:0>2}' \
-            .format(credit_card)
-        credit_card_type.cardCode = credit_card.cvv
-        payment_type.creditCard = credit_card_type
+        if credit_card is not None:
+            credit_card_type = self.client.factory.create('CreditCardType')
+            credit_card_type.cardNumber = credit_card.card_number
+            credit_card_type.expirationDate = '{0.exp_year}-{0.exp_month:0>2}' \
+                .format(credit_card)
+            credit_card_type.cardCode = credit_card.cvv
+            payment_type.creditCard = credit_card_type
+        elif bank_account is not None:
+            bank_account_type = self.client.factory.create('BankAccountType')
+            bank_account_type_enum = self.client.factory.create(
+                'BankAccountTypeEnum')
+            bank_account_type.accountType = getattr(
+                bank_account_type_enum, str(bank_account.account_type))
+            bank_account_type.nameOnAccount = bank_account.name
+            echeck_type_enum = self.client.factory.create('EcheckTypeEnum')
+            bank_account_type.echeckType = getattr(
+                echeck_type_enum, str(bank_account.echeck_type))
+            bank_account_type.bankName = bank_account.bank_name
+            bank_account_type.routingNumber = bank_account.routing_number
+            bank_account_type.accountNumber = bank_account.account_number
+            payment_type.bankAccount = bank_account_type
         payment_profile.payment = payment_type
 
         # Customer billing name and address are optional fields
-        if credit_card.first_name:
-            payment_profile.billTo.firstName = credit_card.first_name
-        if credit_card.last_name:
-            payment_profile.billTo.lastName = credit_card.last_name
+        if credit_card is not None:
+            if credit_card.first_name:
+                payment_profile.billTo.firstName = credit_card.first_name
+            if credit_card.last_name:
+                payment_profile.billTo.lastName = credit_card.last_name
+        elif bank_account is not None:
+            if bank_account.first_name:
+                payment_profile.billTo.firstName = bank_account.first_name
+            if bank_account.last_name:
+                payment_profile.billTo.lastName = bank_account.last_name
         if address and address.street:
             payment_profile.billTo.address = address.street
         if address and address.city:
