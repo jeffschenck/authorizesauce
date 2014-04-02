@@ -90,6 +90,7 @@ class TransactionAPI(object):
                 'x_city': address.city,
                 'x_state': address.state,
                 'x_zip': address.zip_code,
+                'x_company': address.company,
                 'x_country': address.country,
             })
         for key, value in params.items():

@@ -100,14 +100,15 @@ class CreditCard(object):
 class Address(object):
     """
     Represents a billing address for a charge. Pass in the street, city, state
-    and zip code, and optionally country for the address.
+    and zip code, and optionally country and company for the address.
     """
     def __init__(self, street=None, city=None, state=None, zip_code=None,
-            country='US'):
+                 company=None, country='US'):
         self.street = street
         self.city = city
         self.state = state
         self.zip_code = zip_code
+        self.company = company
         self.country = country
 
     def __repr__(self):

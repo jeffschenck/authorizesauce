@@ -70,7 +70,7 @@ class TransactionAPITests(TestCase):
         self.error = lambda *args, **kwargs: ERROR.reset() or ERROR
         self.year = date.today().year + 10
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911')
-        self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
+        self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291', 'GoodSoft Inc.')
 
     def test_basic_api(self):
         api = TransactionAPI('123', '456')
@@ -123,6 +123,7 @@ class TransactionAPITests(TestCase):
             'x_city': 'Venice',
             'x_state': 'CA',
             'x_zip': '90291',
+            'x_company': 'GoodSoft Inc.',
             'x_country': 'US',
         })
         params = self.api._add_params({},
@@ -135,6 +136,7 @@ class TransactionAPITests(TestCase):
             'x_city': 'Venice',
             'x_state': 'CA',
             'x_zip': '90291',
+            'x_company': 'GoodSoft Inc.',
             'x_country': 'US',
         })
 
@@ -145,7 +147,7 @@ class TransactionAPITests(TestCase):
         self.assertEqual(URL(urlopen.call_args[0][0]),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
             '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
-            '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
+            '&x_tran_key=456&x_city=Venice&x_company=GoodSoft+Inc.&x_country=US&x_version=3.1'
             '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
             '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
             '&x_type=AUTH_ONLY&x_delim_data=TRUE'.format(str(self.year))))
@@ -158,7 +160,7 @@ class TransactionAPITests(TestCase):
         self.assertEqual(URL(urlopen.call_args[0][0]),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
             '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
-            '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
+            '&x_tran_key=456&x_city=Venice&x_company=GoodSoft+Inc.&x_country=US&x_version=3.1'
             '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
             '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
             '&x_type=AUTH_CAPTURE&x_delim_data=TRUE'.format(str(self.year))))
