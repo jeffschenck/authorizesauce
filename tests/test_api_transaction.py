@@ -7,7 +7,7 @@ from urlparse import urlparse, parse_qsl
 from urllib import unquote_plus
 
 from authorize.apis.transaction import PROD_URL, TEST_URL, TransactionAPI
-from authorize.data import Address, CreditCard
+from authorize.data import Address, CreditCard, Order
 from authorize.exceptions import AuthorizeConnectionError, \
     AuthorizeResponseError
 
@@ -71,6 +71,7 @@ class TransactionAPITests(TestCase):
         self.year = date.today().year + 10
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911')
         self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291', 'GoodSoft Inc.')
+        self.order = Order('45F00AC', 'GoodSoft Navigator 2014')
 
     def test_basic_api(self):
         api = TransactionAPI('123', '456')
@@ -138,6 +139,12 @@ class TransactionAPITests(TestCase):
             'x_zip': '90291',
             'x_company': 'GoodSoft Inc.',
             'x_country': 'US',
+        })
+
+        params = self.api._add_params({}, order=self.order)
+        self.assertEqual(params, {
+            'x_invoice_num': '45F00AC',
+            'x_description': 'GoodSoft Navigator 2014',
         })
 
     @mock.patch('authorize.apis.transaction.urllib.urlopen')

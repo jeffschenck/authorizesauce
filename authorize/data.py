@@ -114,3 +114,16 @@ class Address(object):
     def __repr__(self):
         return '<Address {0.street}, {0.city}, {0.state} {0.zip_code}>' \
             .format(self)
+
+class Order(object):
+    """
+    Represents an order information for a charge. Pass in invoice number and
+    optionally charge description
+    """
+    
+    def __init__(self, invoice_num=None, description=None):
+        self.invoice_num = invoice_num
+        self.description = description
+
+    def __repr__(self):
+        return '<Order {0.invoice_num}>'.format(self)

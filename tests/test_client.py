@@ -82,7 +82,7 @@ class ClientTests(TestCase):
         card = AuthorizeCreditCard(self.client, self.credit_card)
         result = card.auth(10)
         self.assertEqual(self.client._transaction.auth.call_args,
-            ((10, self.credit_card, None, None), {}))
+            ((10, self.credit_card, None, None, None), {}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
         self.assertEqual(result.uid, '2171062816')
         self.assertEqual(result.full_response, TRANSACTION_RESULT)
@@ -92,7 +92,7 @@ class ClientTests(TestCase):
         card = AuthorizeCreditCard(self.client, self.credit_card)
         result = card.capture(10)
         self.assertEqual(self.client._transaction.capture.call_args,
-            ((10, self.credit_card, None, None), {}))
+            ((10, self.credit_card, None, None, None), {}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
         self.assertEqual(result.uid, '2171062816')
         self.assertEqual(result.full_response, TRANSACTION_RESULT)
