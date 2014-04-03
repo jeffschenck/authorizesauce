@@ -105,7 +105,7 @@ class AuthorizeCreditCard(object):
         return '<AuthorizeCreditCard {0.credit_card.card_type} ' \
             '{0.credit_card.safe_number}>'.format(self)
 
-    def auth(self, amount):
+    def auth(self, amount, order=None):
         """
         Authorize a transaction against this card for the specified amount.
         This verifies the amount is available on the card and reserves it.
@@ -114,12 +114,12 @@ class AuthorizeCreditCard(object):
         instance representing the transaction.
         """
         response = self._client._transaction.auth(
-            amount, self.credit_card, self.address, self.email)
+            amount, self.credit_card, self.address, order, self.email)
         transaction = self._client.transaction(response['transaction_id'])
         transaction.full_response = response
         return transaction
 
-    def capture(self, amount):
+    def capture(self, amount, order=None):
         """
         Capture a transaction immediately on this card for the specified
         amount. Returns an
@@ -127,7 +127,7 @@ class AuthorizeCreditCard(object):
         instance representing the transaction.
         """
         response = self._client._transaction.capture(
-            amount, self.credit_card, self.address, self.email)
+            amount, self.credit_card, self.address, order, self.email)
         transaction = self._client.transaction(response['transaction_id'])
         transaction.full_response = response
         return transaction

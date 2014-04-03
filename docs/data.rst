@@ -13,3 +13,8 @@ Address
 -------
 
 .. autoclass:: authorize.data.Address
+
+Order information
+-----------------
+
+.. autoclass:: authorize.data.Order
