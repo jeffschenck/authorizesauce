@@ -118,7 +118,7 @@ class Address(object):
 class Order(object):
     """
     Represents an order information for a charge. Pass in invoice number and
-    optionally charge description
+    optionally a description
     """
     
     def __init__(self, invoice_num=None, description=None):
