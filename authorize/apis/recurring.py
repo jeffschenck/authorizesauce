@@ -47,7 +47,8 @@ class RecurringAPI(object):
 
     def create_subscription(self, credit_card, amount, start,
             days=None, months=None, occurrences=None, trial_amount=None,
-            trial_occurrences=None):
+            trial_occurrences=None, invoice_number=None,
+            description=None):
         """
         Creates a recurring subscription payment on the CreditCard provided.
         
@@ -93,6 +94,11 @@ class RecurringAPI(object):
         subscription.amount = str(amount)
         payment_type = self.client.factory.create('PaymentType')
         credit_card_type = self.client.factory.create('CreditCardType')
+        if invoice_number:
+            order_type = self.client.factory.create('OrderType')
+            order_type.invoiceNumber = str(invoice_number)
+            order_type.description = description if description else ""
+            subscription.order = order_type
         credit_card_type.cardNumber = credit_card.card_number
         credit_card_type.expirationDate = '{0}-{1:0>2}'.format(
             credit_card.exp_year, credit_card.exp_month)
@@ -152,7 +158,8 @@ class RecurringAPI(object):
         return response.subscriptionId
 
     def update_subscription(self, subscription_id, amount=None, start=None,
-            occurrences=None, trial_amount=None, trial_occurrences=None):
+            occurrences=None, trial_amount=None, trial_occurrences=None,
+            invoice_number=None, description=None):
         """
         Updates an existing recurring subscription payment. All fields to
         update are optional, and only the provided fields will be udpated.
@@ -203,8 +210,14 @@ class RecurringAPI(object):
             subscription.trialAmount = str(trial_amount)
         if trial_occurrences:
             subscription.paymentSchedule.trialOccurrences = trial_occurrences
+        if invoice_number:
+            order_type = self.client.factory.create('OrderType')
+            order_type.invoiceNumber = str(invoice_number)
+            order_type.description = description if description else ""
+            subscription.order = order_type
 
-        # Make the API call to update the subscription
+
+    # Make the API call to update the subscription
         self._make_call('ARBUpdateSubscription', subscription_id,
             subscription)
 
