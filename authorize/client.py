@@ -35,13 +35,14 @@ class AuthorizeClient(object):
     the standard API in test mode, which should generally be left ``False``,
     even in development and staging environments.
     """
-    def __init__(self, login_id, transaction_key, debug=True, test=False):
+    def __init__(self, login_id, transaction_key, debug=True, test=False, usaepay=False):
         self.login_id = login_id
         self.transaction_key = transaction_key
         self.debug = debug
         self.test = test
+        self.usaepay = usaepay
         self._transaction = TransactionAPI(login_id, transaction_key,
-            debug, test)
+            debug, test, usaepay)
         self._recurring = RecurringAPI(login_id, transaction_key, debug, test)
         self._customer = CustomerAPI(login_id, transaction_key, debug, test)
 
