@@ -2,6 +2,7 @@ from datetime import date
 
 import mock
 from suds import WebFault
+from ssl import SSLError
 from unittest2 import TestCase
 
 from authorize.apis.customer import CustomerAPI, PROD_URL, TEST_URL
@@ -132,6 +133,13 @@ class CustomerAPITests(TestCase):
             'TestService', 'foo')
         self.assertEqual(self.api.client.service.TestService.call_args[0],
             (self.api.client_auth, 'foo'))
+
+    def test_make_call_ssl_error(self):
+        self.api.client.service.TestService.side_effect = SSLError('a', 'b')
+        self.assertRaises(AuthorizeConnectionError, self.api._make_call,
+                          'TestService', 'foo')
+        self.assertEqual(self.api.client.service.TestService.call_args[0],
+                         (self.api.client_auth, 'foo'))
 
     def test_make_call_response_error(self):
         self.api.client.service.TestService.return_value = ERROR

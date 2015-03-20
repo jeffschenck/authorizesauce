@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from ssl import SSLError
 
 from suds import WebFault
 from suds.client import Client
@@ -38,7 +39,7 @@ class RecurringAPI(object):
         method = getattr(self.client.service, service)
         try:
             response = method(self.client_auth, *args)
-        except WebFault as e:
+        except (WebFault, SSLError) as e:
             raise AuthorizeConnectionError(e)
         if response.resultCode != 'Ok':
             error = response.messages[0][0]

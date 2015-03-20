@@ -54,7 +54,7 @@ from setuptools import setup
 
 setup(
     name='AuthorizeSauce',
-    version='0.3.1',
+    version='0.3.3',
     author='Jeff Schenck',
     author_email='jmschenck@gmail.com',
     url='http://authorize-sauce.readthedocs.org/',

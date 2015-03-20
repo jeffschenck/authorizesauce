@@ -1,6 +1,7 @@
 from decimal import Decimal
 import urllib
 from datetime import datetime
+from ssl import SSLError
 
 from suds import WebFault
 from suds.client import Client
@@ -46,7 +47,7 @@ class CustomerAPI(object):
         method = getattr(self.client.service, service)
         try:
             response = method(self.client_auth, *args)
-        except WebFault as e:
+        except (WebFault, SSLError) as e:
             raise AuthorizeConnectionError('Error contacting SOAP API.')
         if response.resultCode != 'Ok':
             error = response.messages[0][0]
@@ -214,8 +215,14 @@ class CustomerAPI(object):
         self._make_call('DeleteCustomerPaymentProfile',
             profile_id, payment_id)
 
-    def auth(self, profile_id, payment_id, amount, invoice_number=None,
+    def auth(self, profile_id, payment_id, amount, cvv=None, invoice_number=None,
              description=None, purchase_order_number=None):
+        if cvv is not None:
+            try:
+                int(cvv)
+            except ValueError:
+                raise AuthorizeInvalidError("CVV Must be a number.")
+
         transaction = self.client.factory.create('ProfileTransactionType')
         auth = self.client.factory.create('ProfileTransAuthOnlyType')
         amount = Decimal(str(amount)).quantize(Decimal('0.01'))
@@ -229,13 +236,20 @@ class CustomerAPI(object):
             order_type.purchaseOrderNumber = \
                 purchase_order_number if purchase_order_number else ""
             auth.order = order_type
+        auth.cardCode = cvv
         transaction.profileTransAuthOnly = auth
         response = self._make_call('CreateCustomerProfileTransaction',
             transaction, self.transaction_options)
         return parse_response(response.directResponse)
 
-    def capture(self, profile_id, payment_id, amount, invoice_number=None,
+    def capture(self, profile_id, payment_id, amount, cvv=None, invoice_number=None,
                 description=None, purchase_order_number=None):
+        if cvv is not None:
+            try:
+                int(cvv)
+            except ValueError:
+                raise AuthorizeInvalidError("CVV Must be a number.")
+
         transaction = self.client.factory.create('ProfileTransactionType')
         capture = self.client.factory.create('ProfileTransAuthCaptureType')
         amount = Decimal(str(amount)).quantize(Decimal('0.01'))
@@ -249,6 +263,7 @@ class CustomerAPI(object):
             order_type.purchaseOrderNumber = \
                 purchase_order_number if purchase_order_number else ""
             capture.order = order_type
+        capture.cardCode = cvv
         transaction.profileTransAuthCapture = capture
         response = self._make_call('CreateCustomerProfileTransaction',
             transaction, self.transaction_options)

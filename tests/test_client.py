@@ -176,7 +176,7 @@ class ClientTests(TestCase):
         saved = AuthorizeSavedCard(self.client, '1|2')
         result = saved.auth(10)
         self.assertEqual(self.client._customer.auth.call_args,
-            (('1', '2', 10),
+            (('1', '2', 10, None),
              {'purchase_order_number':None, 'description':None,
               'invoice_number':None}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
@@ -187,7 +187,7 @@ class ClientTests(TestCase):
         saved = AuthorizeSavedCard(self.client, '1|2')
         result = saved.capture(10)
         self.assertEqual(self.client._customer.capture.call_args,
-            (('1', '2', 10),
+            (('1', '2', 10, None),
              {'purchase_order_number': None, 'description':None,
               'invoice_number':None}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
