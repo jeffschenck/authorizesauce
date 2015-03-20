@@ -212,11 +212,10 @@ class CustomerAPI(object):
         self._make_call('DeleteCustomerProfile', profile_id)
 
     def delete_saved_payment(self, profile_id, payment_id):
-        self._make_call('DeleteCustomerPaymentProfile',
-            profile_id, payment_id)
+        self._make_call('DeleteCustomerPaymentProfile', profile_id, payment_id)
 
-    def auth(self, profile_id, payment_id, amount, cvv=None, invoice_number=None,
-             description=None, purchase_order_number=None):
+    def auth(self, profile_id, payment_id, amount, cvv=None,
+             invoice_number=None, description=None, purchase_order_number=None):
         if cvv is not None:
             try:
                 int(cvv)
@@ -242,8 +241,9 @@ class CustomerAPI(object):
             transaction, self.transaction_options)
         return parse_response(response.directResponse)
 
-    def capture(self, profile_id, payment_id, amount, cvv=None, invoice_number=None,
-                description=None, purchase_order_number=None):
+    def capture(self, profile_id, payment_id, amount, cvv=None,
+                invoice_number=None, description=None,
+                purchase_order_number=None):
         if cvv is not None:
             try:
                 int(cvv)
@@ -271,7 +271,8 @@ class CustomerAPI(object):
 
     def credit(self, profile_id, payment_id, amount, invoice_number=None,
                description=None, purchase_order_number=None):
-        # Creates an "unlinked credit" (as opposed to refunding a previous transaction)
+        # Creates an "unlinked credit" (as opposed to refunding a previous
+        # transaction)
         transaction = self.client.factory.create('ProfileTransactionType')
         credit = self.client.factory.create('ProfileTransRefundType')
         amount = Decimal(str(amount)).quantize(Decimal('0.01'))

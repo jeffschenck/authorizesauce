@@ -22,6 +22,7 @@ from authorize.apis.customer import CustomerAPI
 from authorize.apis.recurring import RecurringAPI
 from authorize.apis.transaction import TransactionAPI
 
+
 class AuthorizeClient(object):
     """
     Instantiate the client with your login ID and transaction key from
