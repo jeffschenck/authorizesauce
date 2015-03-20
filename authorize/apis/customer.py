@@ -212,53 +212,80 @@ class CustomerAPI(object):
         self._make_call('DeleteCustomerProfile', profile_id)
 
     def delete_saved_payment(self, profile_id, payment_id):
-        self._make_call('DeleteCustomerPaymentProfile',
-            profile_id, payment_id)
+        self._make_call('DeleteCustomerPaymentProfile', profile_id, payment_id)
 
-    def auth(self, profile_id, payment_id, amount, cvv=None):
+    def auth(self, profile_id, payment_id, amount, cvv=None,
+             invoice_number=None, description=None, purchase_order_number=None):
         if cvv is not None:
             try:
                 int(cvv)
             except ValueError:
                 raise AuthorizeInvalidError("CVV Must be a number.")
+
         transaction = self.client.factory.create('ProfileTransactionType')
         auth = self.client.factory.create('ProfileTransAuthOnlyType')
         amount = Decimal(str(amount)).quantize(Decimal('0.01'))
         auth.amount = str(amount)
         auth.customerProfileId = profile_id
         auth.customerPaymentProfileId = payment_id
+        if invoice_number:
+            order_type = self.client.factory.create('OrderExType')
+            order_type.invoiceNumber = str(invoice_number)
+            order_type.description = description if description else ""
+            order_type.purchaseOrderNumber = \
+                purchase_order_number if purchase_order_number else ""
+            auth.order = order_type
         auth.cardCode = cvv
         transaction.profileTransAuthOnly = auth
         response = self._make_call('CreateCustomerProfileTransaction',
             transaction, self.transaction_options)
         return parse_response(response.directResponse)
 
-    def capture(self, profile_id, payment_id, amount, cvv=None):
+    def capture(self, profile_id, payment_id, amount, cvv=None,
+                invoice_number=None, description=None,
+                purchase_order_number=None):
         if cvv is not None:
             try:
                 int(cvv)
             except ValueError:
                 raise AuthorizeInvalidError("CVV Must be a number.")
+
         transaction = self.client.factory.create('ProfileTransactionType')
         capture = self.client.factory.create('ProfileTransAuthCaptureType')
         amount = Decimal(str(amount)).quantize(Decimal('0.01'))
         capture.amount = str(amount)
         capture.customerProfileId = profile_id
         capture.customerPaymentProfileId = payment_id
+        if invoice_number:
+            order_type = self.client.factory.create('OrderExType')
+            order_type.invoiceNumber = str(invoice_number)
+            order_type.description = description if description else ""
+            order_type.purchaseOrderNumber = \
+                purchase_order_number if purchase_order_number else ""
+            capture.order = order_type
         capture.cardCode = cvv
         transaction.profileTransAuthCapture = capture
         response = self._make_call('CreateCustomerProfileTransaction',
             transaction, self.transaction_options)
         return parse_response(response.directResponse)
 
-    def credit(self, profile_id, payment_id, amount):
-        # Creates an "unlinked credit" (as opposed to refunding a previous transaction)
+    def credit(self, profile_id, payment_id, amount, invoice_number=None,
+               description=None, purchase_order_number=None):
+        # Creates an "unlinked credit" (as opposed to refunding a previous
+        # transaction)
         transaction = self.client.factory.create('ProfileTransactionType')
         credit = self.client.factory.create('ProfileTransRefundType')
         amount = Decimal(str(amount)).quantize(Decimal('0.01'))
         credit.amount = str(amount)
         credit.customerProfileId = profile_id
         credit.customerPaymentProfileId = payment_id
+        if invoice_number:
+            order_type = self.client.factory.create('OrderExType')
+            order_type.invoiceNumber = str(invoice_number)
+            order_type.description = description if description else ""
+            order_type.purchaseOrderNumber = \
+                purchase_order_number if purchase_order_number else ""
+            credit.order = order_type
         transaction.profileTransRefund = credit
         response = self._make_call('CreateCustomerProfileTransaction',
             transaction, self.transaction_options)

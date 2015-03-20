@@ -22,6 +22,7 @@ from authorize.apis.customer import CustomerAPI
 from authorize.apis.recurring import RecurringAPI
 from authorize.apis.transaction import TransactionAPI
 
+
 class AuthorizeClient(object):
     """
     Instantiate the client with your login ID and transaction key from
@@ -105,7 +106,7 @@ class AuthorizeCreditCard(object):
         return '<AuthorizeCreditCard {0.credit_card.card_type} ' \
             '{0.credit_card.safe_number}>'.format(self)
 
-    def auth(self, amount):
+    def auth(self, amount, invoice_number=None, description=None):
         """
         Authorize a transaction against this card for the specified amount.
         This verifies the amount is available on the card and reserves it.
@@ -114,12 +115,13 @@ class AuthorizeCreditCard(object):
         instance representing the transaction.
         """
         response = self._client._transaction.auth(
-            amount, self.credit_card, self.address, self.email)
+            amount, self.credit_card, self.address, self.email,
+            invoice_number=invoice_number, description=description)
         transaction = self._client.transaction(response['transaction_id'])
         transaction.full_response = response
         return transaction
 
-    def capture(self, amount):
+    def capture(self, amount, invoice_number=None, description=None):
         """
         Capture a transaction immediately on this card for the specified
         amount. Returns an
@@ -127,7 +129,8 @@ class AuthorizeCreditCard(object):
         instance representing the transaction.
         """
         response = self._client._transaction.capture(
-            amount, self.credit_card, self.address, self.email)
+            amount, self.credit_card, self.address, self.email,
+            invoice_number=invoice_number, description=description)
         transaction = self._client.transaction(response['transaction_id'])
         transaction.full_response = response
         return transaction
@@ -148,7 +151,8 @@ class AuthorizeCreditCard(object):
         return self._client.saved_card(uid)
 
     def recurring(self, amount, start, days=None, months=None,
-            occurrences=None, trial_amount=None, trial_occurrences=None):
+            occurrences=None, trial_amount=None, trial_occurrences=None,
+            invoice_number=None, description=None):
         """
         Creates a recurring payment with this credit card. Pass in the
         following arguments to set it up:
@@ -187,7 +191,8 @@ class AuthorizeCreditCard(object):
         uid = self._client._recurring.create_subscription(
             self.credit_card, amount, start, days=days, months=months,
             occurrences=occurrences, trial_amount=trial_amount,
-            trial_occurrences=trial_occurrences)
+            trial_occurrences=trial_occurrences, invoice_number=invoice_number,
+            description=description)
         return self._client.recurring(uid)
 
 
@@ -297,7 +302,8 @@ class AuthorizeSavedCard(object):
     def __repr__(self):
         return '<AuthorizeSavedCard {0.uid}>'.format(self)
 
-    def auth(self, amount, cvv=None):
+    def auth(self, amount, cvv=None, invoice_number=None,
+             description=None, purchase_order_number=None):
         """
         Authorize a transaction against this card for the specified amount.
         This verifies the amount is available on the card and reserves it.
@@ -306,12 +312,15 @@ class AuthorizeSavedCard(object):
         instance representing the transaction.
         """
         response = self._client._customer.auth(
-            self._profile_id, self._payment_id, amount, cvv)
+            self._profile_id, self._payment_id, amount, cvv,
+            invoice_number=invoice_number, description=description,
+            purchase_order_number=purchase_order_number)
         transaction = self._client.transaction(response['transaction_id'])
         transaction.full_response = response
         return transaction
 
-    def capture(self, amount,  cvv=None):
+    def capture(self, amount, cvv=None, invoice_number=None, description=None,
+                purchase_order_number=None):
         """
         Capture a transaction immediately on this card for the specified
         amount. Returns an
@@ -319,7 +328,9 @@ class AuthorizeSavedCard(object):
         instance representing the transaction.
         """
         response = self._client._customer.capture(
-            self._profile_id, self._payment_id, amount, cvv)
+            self._profile_id, self._payment_id, amount, cvv,
+            invoice_number=invoice_number, description=description,
+            purchase_order_number=purchase_order_number)
         transaction = self._client.transaction(response['transaction_id'])
         transaction.full_response = response
         return transaction
@@ -413,7 +424,8 @@ class AuthorizeRecurring(object):
         return '<AuthorizeRecurring {0.uid}>'.format(self)
 
     def update(self, amount=None, start=None, occurrences=None,
-            trial_amount=None, trial_occurrences=None):
+            trial_amount=None, trial_occurrences=None, invoice_number=None,
+            description=None):
         """
         Updates the amount or status of the recurring payment. You may provide
         any or all fields and they will be updated appropriately, so long as
@@ -445,7 +457,8 @@ class AuthorizeRecurring(object):
         """
         self._client._recurring.update_subscription(self.uid,
             amount=amount, start=start, occurrences=occurrences,
-            trial_amount=trial_amount, trial_occurrences=trial_occurrences)
+            trial_amount=trial_amount, trial_occurrences=trial_occurrences,
+            invoice_number=invoice_number, description=description)
 
     def delete(self):
         """

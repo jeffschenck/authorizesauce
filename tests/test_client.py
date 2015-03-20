@@ -82,7 +82,8 @@ class ClientTests(TestCase):
         card = AuthorizeCreditCard(self.client, self.credit_card)
         result = card.auth(10)
         self.assertEqual(self.client._transaction.auth.call_args,
-            ((10, self.credit_card, None, None), {}))
+            ((10, self.credit_card, None, None),
+             {'invoice_number': None, 'description': None}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
         self.assertEqual(result.uid, '2171062816')
         self.assertEqual(result.full_response, TRANSACTION_RESULT)
@@ -92,7 +93,8 @@ class ClientTests(TestCase):
         card = AuthorizeCreditCard(self.client, self.credit_card)
         result = card.capture(10)
         self.assertEqual(self.client._transaction.capture.call_args,
-            ((10, self.credit_card, None, None), {}))
+            ((10, self.credit_card, None, None),
+             {'invoice_number': None, 'description': None}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
         self.assertEqual(result.uid, '2171062816')
         self.assertEqual(result.full_response, TRANSACTION_RESULT)
@@ -118,7 +120,8 @@ class ClientTests(TestCase):
         self.assertEqual(self.client._recurring.create_subscription.call_args,
             ((self.credit_card, 10, today), {'days': None, 'months': 1,
             'occurrences': None, 'trial_amount': None,
-            'trial_occurrences': None}))
+            'trial_occurrences': None, 'invoice_number': None,
+            'description': None}))
         self.assertTrue(isinstance(result, AuthorizeRecurring))
         self.assertEqual(result.uid, '1')
 
@@ -173,7 +176,9 @@ class ClientTests(TestCase):
         saved = AuthorizeSavedCard(self.client, '1|2')
         result = saved.auth(10)
         self.assertEqual(self.client._customer.auth.call_args,
-            (('1', '2', 10, None), {}))
+            (('1', '2', 10, None),
+             {'purchase_order_number':None, 'description':None,
+              'invoice_number':None}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
         self.assertEqual(result.uid, '2171062816')
 
@@ -182,7 +187,9 @@ class ClientTests(TestCase):
         saved = AuthorizeSavedCard(self.client, '1|2')
         result = saved.capture(10)
         self.assertEqual(self.client._customer.capture.call_args,
-            (('1', '2', 10, None), {}))
+            (('1', '2', 10, None),
+             {'purchase_order_number': None, 'description':None,
+              'invoice_number':None}))
         self.assertTrue(isinstance(result, AuthorizeTransaction))
         self.assertEqual(result.uid, '2171062816')
 
@@ -225,7 +232,8 @@ class ClientTests(TestCase):
         recurring.update(occurrences=20)
         self.assertEqual(self.client._recurring.update_subscription.call_args,
             (('123',), {'amount': None, 'start': None, 'occurrences': 20,
-            'trial_amount': None, 'trial_occurrences': None}))
+            'trial_amount': None, 'trial_occurrences': None,
+            'invoice_number': None, 'description': None}))
 
     def test_authorize_recurring_delete(self):
         recurring = AuthorizeRecurring(self.client, '123')
