@@ -63,7 +63,7 @@ setup(
     long_description=__doc__,
     license='MIT',
     install_requires=[
-        'suds>=0.4',
+        'suds-jurko>=0.6',
     ],
     packages=[
         'authorize',
