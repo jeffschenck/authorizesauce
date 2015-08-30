@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 
 from unittest2 import TestCase
 
-from authorize.data import Address, CreditCard
+from authorize.data import Address, CreditCard, ECheckAccount
 from authorize.exceptions import AuthorizeInvalidError
 
 
@@ -61,3 +61,17 @@ class AddressTests(TestCase):
     def test_basic_address(self):
         address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
         repr(address)
+
+
+class ECheckTests(TestCase):
+    # Taken from https://www.wepay.com/developer/reference/testing
+    # Authorize.Net forum posts say any routing number will work for testing.
+    ROUTING_NUMBER = '021000021'
+
+    def test_safe_routing_number(self):
+        echeck = ECheckAccount(self.ROUTING_NUMBER, '1234567890')
+        self.assertEqual(echeck.safe_routing_number, 'XXXX0021')
+
+    def test_safe_account_number(self):
+        echeck = ECheckAccount(self.ROUTING_NUMBER, '1234567890')
+        self.assertEqual(echeck.safe_account_number, 'XXXX7890')

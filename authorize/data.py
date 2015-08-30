@@ -183,3 +183,32 @@ class ECheckAccount(object):
             'x_bank_name': self.bank_name,
             'x_bank_acct_name': self.account_name,
         }
+
+    @property
+    def safe_account_number(self):
+        """
+        The account number with all but the last four digits masked. This
+        is useful for storing a representation of the account without keeping
+        sensitive data.
+
+        This matches the format used by Authorize.Net in its administrative
+        interface: "XXXX" followed by the last four digits, regardless of the
+        length of the account number.
+        """
+        return 'XXXX' + self.account_number[-4:]
+
+    @property
+    def safe_routing_number(self):
+        """
+        The routing number with all but the last four digits masked.
+        Authorize.Net uses this format in its administrative interface.
+        Routing numbers are generally public knowledge (see, for example, the
+        American Banking Association's `search page`_), but which bank a
+        particular person uses is still sensitive data.
+
+        The format matches Authorize.Net: "XXXX" followed by the last four
+        digits, even though routing numbers are nine digits long.
+
+        .. _search page: http://routingnumber.aba.com/
+        """
+        return 'XXXX' + self.routing_number[-4:]

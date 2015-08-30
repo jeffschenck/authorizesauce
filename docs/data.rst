@@ -18,4 +18,4 @@ eCheck account
 --------------
 
 .. autoclass:: authorize.data.ECheckAccount
-    :members: validate
+    :members: validate, safe_account_number, safe_routing_number

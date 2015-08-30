@@ -269,8 +269,8 @@ class AuthorizeTransaction(object):
 
     def void(self):
         """
-        Voids a previous authorization that has not yet been settled. Returns
-        an
+        Voids a previous credit card or eCheck authorization that has not yet
+        been settled. Returns an
         :class:`AuthorizeTransaction <authorize.client.AuthorizeTransaction>`
         instance representing the void transaction.
         """

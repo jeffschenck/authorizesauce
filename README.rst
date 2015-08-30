@@ -47,6 +47,7 @@ Saucy Features
 * Save a credit card securely on Authorize.net's servers
 * Use saved cards to charge, auth and credit
 * Create recurring charges, with billing cycles, trial periods, etc.
+* Process an eCheck
 
 For the full documentation, please visit us at `Read the Docs`_. Thanks to
 Chewse_ for supporting the development and open-sourcing of this library.
