@@ -13,3 +13,9 @@ Address
 -------
 
 .. autoclass:: authorize.data.Address
+
+eCheck account
+--------------
+
+.. autoclass:: authorize.data.ECheckAccount
+    :members: validate

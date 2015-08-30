@@ -58,6 +58,18 @@ class AuthorizeClient(object):
         return AuthorizeCreditCard(self, credit_card, address=address,
                                    email=email)
 
+    def echeck(self, echeck_account, address=None, email=None):
+        """
+        To work with an eCheck account, pass in a
+        :class:`ECheckAccount <authorize.data.ECheckAccount>` instance, and
+        optionally an :class:`Address <authorize.data.Address>` instance. This
+        will return an
+        :class:`AuthorizeECheck <authorize.client.AuthorizeECheck>`
+        instance you can then use to execute transactions.
+        """
+        return AuthorizeECheck(self, echeck_account, address=address,
+                               email=email)
+
     def transaction(self, uid):
         """
         To perform an action on a previous transaction, pass in the ``uid`` of
@@ -452,3 +464,43 @@ class AuthorizeRecurring(object):
         Cancels any future charges from this recurring payment.
         """
         self._client._recurring.delete_subscription(self.uid)
+
+
+class AuthorizeECheck(object):
+    """
+    This is the interface for working with an eCheck.
+
+    Note that eCheck.Net is a separate service through Authorize.net; you must
+    sign up for it separately.
+    """
+    def __init__(self, client, echeck_account, address=None, email=None):
+        self._client = client
+        self.echeck_account = echeck_account
+        self.address = address
+        self.email = email
+
+    def __repr__(self):
+        return '<AuthorizeECheck {0.echeck_account.bank_name} ' \
+            '{0.echeck_account.account_name}>'.format(self)
+
+    def web(self, amount, recurring=False):
+        """
+        An Internet-initiated charge against a customer account.
+
+        Returns an
+        :class:`AuthorizeTransaction <authorize.client.AuthorizeTransaction>`
+        instance representing the transaction.
+
+        ``amount``
+            The amount of the transaction
+
+        ``recurring``
+            Informational flag to indicate that this is a recurring
+            transaction.  (The eCheck API doesn't provide automated recurring
+            payments.)
+        """
+        response = self._client._transaction.echeck_web(
+            amount, self.echeck_account, self.address, self.email, recurring)
+        transaction = self._client.transaction(response['transaction_id'])
+        transaction.full_response = response
+        return transaction

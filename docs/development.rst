@@ -101,11 +101,13 @@ fairly uninformative. That said, you can find it here:
 * `Advanced Integration Method`_
 * `Customer Information Manager`_
 * `Automated Recurring Billing`_
+* `eCheck.Net`_
 
 .. _Developer site: http://developer.authorize.net/
 .. _Advanced Integration Method: http://www.authorize.net/support/AIM_guide.pdf
 .. _Customer Information Manager: http://www.authorize.net/support/CIM_SOAP_guide.pdf
 .. _Automated Recurring Billing: http://www.authorize.net/support/ARB_SOAP_guide.pdf
+.. _eCheck.Net: http://www.authorize.net/support/AIM_guide.pdf
 
 Submitting bugs and patches
 ---------------------------

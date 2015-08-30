@@ -1,6 +1,6 @@
 """
-This module provides the data structures for describing credit cards and
-addresses for use in executing charges.
+This module provides the data structures for describing credit cards,
+addresses, and checking accounts for use in executing charges.
 """
 
 import calendar
@@ -96,6 +96,19 @@ class CreditCard(object):
             if re.match(card_type_re, self.card_number):
                 return card_type
 
+    def transaction_params(self):
+        """
+        Gets the Authorize.net API parameters to use to represent this
+        credit card.
+        """
+        return {
+            'x_card_num': self.card_number,
+            'x_exp_date': self.expiration.strftime('%m-%Y'),
+            'x_card_code': self.cvv,
+            'x_first_name': self.first_name,
+            'x_last_name': self.last_name,
+        }
+
 
 class Address(object):
     """
@@ -113,3 +126,60 @@ class Address(object):
     def __repr__(self):
         return '<Address {0.street}, {0.city}, {0.state} {0.zip_code}>' \
             .format(self)
+
+
+class ECheckAccount(object):
+    """
+    Represents an eCheck account that can be charged.
+
+    Note that eCheck.Net is a separate service through Authorize.net; you must
+    sign up for it separately.
+
+    ``routing_number``
+        9-digit ABA routing number for the back
+
+    ``account_number``
+        Account number
+
+    ``account_type``
+        ``'checking'``, ``'businesschecking'``, or ``'savings'``
+
+    ``bank_name``
+        Name of the bank
+
+    ``account_name``
+        The name on the account
+    """
+    ACCOUNT_TYPES = ('checking', 'businesschecking', 'savings')
+
+    def __init__(self, routing_number=None, account_number=None,
+            account_type=None, bank_name=None, account_name=None):
+        self.routing_number = str(routing_number)
+        self.account_number = str(account_number)
+        self.account_type = account_type
+        self.bank_name = bank_name
+        self.account_name = account_name
+
+    def validate(self):
+        """
+        See :func:`CreditCard.validate`.
+        """
+        if not re.match(r'^\d9$', self.routing_number):
+            raise AuthorizeInvalidError('Routing number should be a 9 digit number.')
+        if not re.match(r'^\d{1,20}$', self.account_number):
+            raise AuthorizeInvalidError('Account number should be a number between 1 and 20 digits.')
+        if self.account_type.lower() not in self.ACCOUNT_TYPES:
+            raise AuthorizeInvalidError('Invalid account type.')
+
+    def transaction_params(self):
+        """
+        Gets the Authorize.net API parameters to use to represent this
+        eCheck account.
+        """
+        return {
+            'x_bank_aba_code': self.routing_number,
+            'x_bank_acct_num': self.account_number,
+            'x_bank_acct_type': self.account_type.upper(),
+            'x_bank_name': self.bank_name,
+            'x_bank_acct_name': self.account_name,
+        }
