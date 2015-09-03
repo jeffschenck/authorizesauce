@@ -135,6 +135,8 @@ class ECheckAccount(object):
     Note that eCheck.Net is a separate service through Authorize.net; you must
     sign up for it separately.
 
+    All parameters are required.
+
     ``routing_number``
         9-digit ABA routing number for the back
 
@@ -153,23 +155,28 @@ class ECheckAccount(object):
     ACCOUNT_TYPES = ('checking', 'businesschecking', 'savings')
 
     def __init__(self, routing_number=None, account_number=None,
-            account_type=None, bank_name=None, account_name=None):
+            account_type='checking', bank_name=None, account_name=None):
         self.routing_number = str(routing_number)
         self.account_number = str(account_number)
         self.account_type = account_type
         self.bank_name = bank_name
         self.account_name = account_name
+        self.validate()
 
     def validate(self):
         """
         See :func:`CreditCard.validate`.
         """
-        if not re.match(r'^\d9$', self.routing_number):
+        if not re.match(r'^\d{9}$', self.routing_number):
             raise AuthorizeInvalidError('Routing number should be a 9 digit number.')
         if not re.match(r'^\d{1,20}$', self.account_number):
             raise AuthorizeInvalidError('Account number should be a number between 1 and 20 digits.')
         if self.account_type.lower() not in self.ACCOUNT_TYPES:
             raise AuthorizeInvalidError('Invalid account type.')
+        if self.bank_name is None:
+            raise AuthorizeInvalidError('Bank name is required.')
+        if self.account_name is None:
+            raise AuthorizeInvalidError('Account name is required.')
 
     def transaction_params(self):
         """

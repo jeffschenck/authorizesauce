@@ -50,7 +50,8 @@ class ClientTests(TestCase):
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911',
             'Jeff', 'Schenck')
         self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
-        self.echeck_account = ECheckAccount('021000021', '1234567890', 'checking', 'First Bank', 'John Doe')
+        self.echeck_account = ECheckAccount('021000021', '1234567890',
+            'checking', 'First Bank', 'John Doe')
 
     def tearDown(self):
         self.transaction_api_patcher.stop()
@@ -249,7 +250,7 @@ class ClientTests(TestCase):
 
     def test_authorize_echeck_web(self):
         self.client._transaction.echeck_web.return_value = ECHECK_TRANSACTION_RESULT
-        echeck = AuthorizeECheck(self.client, self.echeck_account)
+        echeck = self.client.echeck(self.echeck_account)
         result = echeck.web(10)
         self.assertEqual(self.client._transaction.echeck_web.call_args,
             ((10, self.echeck_account, None, None, False), {}))

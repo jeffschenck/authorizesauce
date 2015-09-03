@@ -83,7 +83,7 @@ class TransactionAPITests(TestCase):
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911')
         self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
         self.echeck_account = ECheckAccount('123456789', '1234567',
-            account_type='checking')
+            bank_name='First Bank', account_name='John Doe')
 
     def test_basic_api(self):
         api = TransactionAPI('123', '456')
@@ -231,5 +231,6 @@ class TransactionAPITests(TestCase):
             '&x_amount=10.00&x_echeck_type=WEB&x_bank_acct_num=1234567'
             '&x_delim_char=%3B&x_tran_key=456&x_recurring_billing=FALSE'
             '&x_bank_aba_code=123456789&x_method=ECHECK&x_delim_data=TRUE'
-            '&x_bank_acct_type=CHECKING&x_login=123&x_test_request=FALSE'))
+            '&x_bank_acct_type=CHECKING&x_login=123&x_test_request=FALSE'
+            '&x_bank_name=First%20Bank&x_bank_acct_name=John%20Doe'))
         self.assertEqual(result, PARSED_SUCCESS)
