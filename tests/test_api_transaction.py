@@ -6,7 +6,7 @@ from unittest2 import TestCase
 from six.moves.urllib.parse import urlparse, parse_qsl, unquote_plus
 
 from authorize.apis.transaction import PROD_URL, TEST_URL, TransactionAPI
-from authorize.data import Address, CreditCard
+from authorize.data import Address, CreditCard, ECheckAccount
 from authorize.exceptions import AuthorizeConnectionError, \
     AuthorizeResponseError
 
@@ -82,6 +82,8 @@ class TransactionAPITests(TestCase):
         self.year = date.today().year + 10
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911')
         self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
+        self.echeck_account = ECheckAccount('123456789', '1234567',
+            account_type='checking')
 
     def test_basic_api(self):
         api = TransactionAPI('123', '456')
@@ -122,7 +124,7 @@ class TransactionAPITests(TestCase):
 
     def test_add_params(self):
         self.assertEqual(self.api._add_params({}), {})
-        params = self.api._add_params({}, credit_card=self.credit_card)
+        params = self.api._add_params({}, account=self.credit_card)
         self.assertEqual(params, {
             'x_card_num': '4111111111111111',
             'x_exp_date': '01-{0}'.format(self.year),
@@ -137,7 +139,7 @@ class TransactionAPITests(TestCase):
             'x_country': 'US',
         })
         params = self.api._add_params({},
-            credit_card=self.credit_card, address=self.address)
+            account=self.credit_card, address=self.address)
         self.assertEqual(params, {
             'x_card_num': '4111111111111111',
             'x_exp_date': '01-{0}'.format(self.year),
@@ -218,4 +220,16 @@ class TransactionAPITests(TestCase):
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
             '&x_trans_id=123456&x_version=3.1&x_delim_char=%3B&x_type=VOID'
             '&x_delim_data=TRUE&x_tran_key=456&x_test_request=FALSE'))
+        self.assertEqual(result, PARSED_SUCCESS)
+
+    @mock.patch('authorize.apis.transaction.urlopen')
+    def test_echeck_web(self, urlopen):
+        urlopen.side_effect = self.success
+        result = self.api.echeck_web(10, self.echeck_account)
+        self.assertEqual(URL(urlopen.call_args[0][0]),
+            URL('https://test.authorize.net/gateway/transact.dll?x_version=3.1'
+            '&x_amount=10.00&x_echeck_type=WEB&x_bank_acct_num=1234567'
+            '&x_delim_char=%3B&x_tran_key=456&x_recurring_billing=FALSE'
+            '&x_bank_aba_code=123456789&x_method=ECHECK&x_delim_data=TRUE'
+            '&x_bank_acct_type=CHECKING&x_login=123&x_test_request=FALSE'))
         self.assertEqual(result, PARSED_SUCCESS)
