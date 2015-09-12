@@ -169,8 +169,14 @@ class ECheckAccount(object):
         """
         if not re.match(r'^\d{9}$', self.routing_number):
             raise AuthorizeInvalidError('Routing number should be a 9 digit number.')
-        if not re.match(r'^\d{1,20}$', self.account_number):
-            raise AuthorizeInvalidError('Account number should be a number between 1 and 20 digits.')
+
+        # Authorize.Net's documentation doesn't give a minimum length, but
+        # testing shows that it rejects any account number < 5 digits.
+        # According to http://stackoverflow.com/a/1540314/25507, 4 is the
+        # minimum length.
+        if not re.match(r'^\d{5,20}$', self.account_number):
+            raise AuthorizeInvalidError('Account number should be a number between 5 and 20 digits.')
+
         if self.account_type.lower() not in self.ACCOUNT_TYPES:
             raise AuthorizeInvalidError('Invalid account type.')
         if self.bank_name is None:
