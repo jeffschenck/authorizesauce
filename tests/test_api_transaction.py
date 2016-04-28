@@ -10,11 +10,13 @@ from authorize.data import Address, CreditCard
 from authorize.exceptions import AuthorizeConnectionError, \
     AuthorizeResponseError
 
+
 class MockResponse(BytesIO):
     class Headers(dict):
         def getparam(self, *args, **kwargs):
             """Python 2 version"""
             return None
+
         def get_content_charset(self, failobj=None, *args, **kwargs):
             """Python 3 version"""
             return failobj
@@ -56,10 +58,11 @@ PARSED_ERROR = {
     'transaction_id': '2171062816',
 }
 
+
 class URL(object):
     """
     a class to enable comparing of two urls regardless of order of parameters
-    see http://stackoverflow.com/questions/5371992/comparing-two-urls-in-python 
+    see http://stackoverflow.com/questions/5371992/comparing-two-urls-in-python
     """
     def __init__(self, url):
         parts = urlparse(url)
@@ -73,6 +76,7 @@ class URL(object):
 
     def __hash__(self, other):
         return hash(self.parts)
+
 
 class TransactionAPITests(TestCase):
     def setUp(self):
@@ -93,23 +97,30 @@ class TransactionAPITests(TestCase):
     def test_make_call(self, urlopen):
         urlopen.side_effect = self.success
         result = self.api._make_call({'a': '1', 'b': '2'})
-        self.assertEqual(URL(urlopen.call_args[0][0]),
-            URL('{0}?a=1&b=2'.format(TEST_URL)))
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data']
+            )),
+            URL('{0}?a=1&b=2'.format(TEST_URL))
+        )
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urlopen')
     def test_make_call_with_unicode(self, urlopen):
         urlopen.side_effect = self.success
         result = self.api._make_call({u('\xe3'): '1', 'b': u('\xe3')})
-        self.assertEqual(URL(urlopen.call_args[0][0]),
-            URL('{0}?%C3%A3=1&b=%C3%A3'.format(TEST_URL)))
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data'])),
+            URL('{0}?%C3%A3=1&b=%C3%A3'.format(TEST_URL))
+        )
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urlopen')
     def test_make_call_connection_error(self, urlopen):
         urlopen.side_effect = IOError('Borked')
         self.assertRaises(AuthorizeConnectionError, self.api._make_call,
-            {'a': '1', 'b': '2'})
+                          {'a': '1', 'b': '2'})
 
     @mock.patch('authorize.apis.transaction.urlopen')
     def test_make_call_response_error(self, urlopen):
@@ -117,7 +128,9 @@ class TransactionAPITests(TestCase):
         try:
             self.api._make_call({'a': '1', 'b': '2'})
         except AuthorizeResponseError as e:
-            self.assertTrue(str(e).startswith('This transaction has been declined.'))
+            self.assertTrue(str(e).startswith(
+                'This transaction has been declined.'
+            ))
             self.assertEqual(e.full_response, PARSED_ERROR)
 
     def test_add_params(self):
@@ -136,8 +149,9 @@ class TransactionAPITests(TestCase):
             'x_zip': '90291',
             'x_country': 'US',
         })
-        params = self.api._add_params({},
-            credit_card=self.credit_card, address=self.address)
+        params = self.api._add_params(
+            {}, credit_card=self.credit_card, address=self.address
+        )
         self.assertEqual(params, {
             'x_card_num': '4111111111111111',
             'x_exp_date': '01-{0}'.format(self.year),
@@ -153,26 +167,34 @@ class TransactionAPITests(TestCase):
     def test_auth(self, urlopen):
         urlopen.side_effect = self.success
         result = self.api.auth(20, self.credit_card, self.address)
-        self.assertEqual(URL(urlopen.call_args[0][0]),
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data'])),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
-            '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
-            '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
-            '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
-            '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
-            '&x_type=AUTH_ONLY&x_delim_data=TRUE'.format(str(self.year))))
+                '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
+                '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
+                '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
+                '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
+                '&x_type=AUTH_ONLY&x_delim_data=TRUE'.format(str(self.year)))
+        )
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urlopen')
     def test_capture(self, urlopen):
         urlopen.side_effect = self.success
         result = self.api.capture(20, self.credit_card, self.address)
-        self.assertEqual(URL(urlopen.call_args[0][0]),
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data'])),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
-            '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
-            '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
-            '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
-            '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
-            '&x_type=AUTH_CAPTURE&x_delim_data=TRUE'.format(str(self.year))))
+                '&x_zip=90291&x_card_num=4111111111111111&x_amount=20.00'
+                '&x_tran_key=456&x_city=Venice&x_country=US&x_version=3.1'
+                '&x_state=CA&x_delim_char=%3B&x_address=45+Rose+Ave'
+                '&x_exp_date=01-{0}&x_test_request=FALSE&x_card_code=911'
+                '&x_type=AUTH_CAPTURE&x_delim_data=TRUE'.format(
+                    str(self.year))
+                )
+        )
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urlopen')
@@ -181,20 +203,25 @@ class TransactionAPITests(TestCase):
 
         # Test without specified amount
         result = self.api.settle('123456')
-        self.assertEqual(URL(urlopen.call_args[0][0]),
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data'])),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
-            '&x_trans_id=123456&x_version=3.1&x_delim_char=%3B'
-            '&x_type=PRIOR_AUTH_CAPTURE&x_delim_data=TRUE&x_tran_key=456'
-            '&x_test_request=FALSE'))
+                '&x_trans_id=123456&x_version=3.1&x_delim_char=%3B'
+                '&x_type=PRIOR_AUTH_CAPTURE&x_delim_data=TRUE&x_tran_key=456'
+                '&x_test_request=FALSE')
+        )
         self.assertEqual(result, PARSED_SUCCESS)
 
         # Test with specified amount
         result = self.api.settle('123456', amount=10)
-        self.assertEqual(URL(urlopen.call_args[0][0]),
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data'])),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
-            '&x_trans_id=123456&x_version=3.1&x_delim_char=%3B'
-            '&x_type=PRIOR_AUTH_CAPTURE&x_amount=10.00&x_delim_data=TRUE'
-            '&x_tran_key=456&x_test_request=FALSE'))
+                '&x_trans_id=123456&x_version=3.1&x_delim_char=%3B'
+                '&x_type=PRIOR_AUTH_CAPTURE&x_amount=10.00&x_delim_data=TRUE'
+                '&x_tran_key=456&x_test_request=FALSE'))
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urlopen')
@@ -203,19 +230,24 @@ class TransactionAPITests(TestCase):
 
         # Test with transaction_id, amount
         result = self.api.credit('1111', '123456', 10)
-        self.assertEqual(URL(urlopen.call_args[0][0]),
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data'])),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
-            '&x_trans_id=123456&x_version=3.1&x_amount=10.00&x_delim_char=%3B'
-            '&x_type=CREDIT&x_card_num=1111&x_delim_data=TRUE&x_tran_key=456'
-            '&x_test_request=FALSE'))
+                '&x_trans_id=123456&x_version=3.1&x_amount=10.00'
+                '&x_delim_char=%3B&x_type=CREDIT&x_card_num=1111'
+                '&x_delim_data=TRUE&x_tran_key=456&x_test_request=FALSE')
+        )
         self.assertEqual(result, PARSED_SUCCESS)
 
     @mock.patch('authorize.apis.transaction.urlopen')
     def test_void(self, urlopen):
         urlopen.side_effect = self.success
         result = self.api.void('123456')
-        self.assertEqual(URL(urlopen.call_args[0][0]),
+        self.assertEqual(
+            URL("{0}?{1}".format(
+                urlopen.call_args[0][0], urlopen.call_args[1]['data'])),
             URL('https://test.authorize.net/gateway/transact.dll?x_login=123'
-            '&x_trans_id=123456&x_version=3.1&x_delim_char=%3B&x_type=VOID'
-            '&x_delim_data=TRUE&x_tran_key=456&x_test_request=FALSE'))
+                '&x_trans_id=123456&x_version=3.1&x_delim_char=%3B&x_type=VOID'
+                '&x_delim_data=TRUE&x_tran_key=456&x_test_request=FALSE'))
         self.assertEqual(result, PARSED_SUCCESS)

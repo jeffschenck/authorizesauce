@@ -23,6 +23,7 @@ RESPONSE_FIELDS = {
 
 DEFAULT_CHARSET = 'iso-8859-1'
 
+
 def get_content_charset(resource):
     """Gets the charset encoding used in the given urlopen response."""
     if PY2:
@@ -33,6 +34,7 @@ def get_content_charset(resource):
     else:
         return resource.headers.get_content_charset(failobj=DEFAULT_CHARSET)
 
+
 def parse_response(response):
     response = response.split(';')
     fields = {}
@@ -40,15 +42,17 @@ def parse_response(response):
         fields[name] = response[index]
     return fields
 
+
 def safe_unicode_to_str(string):
     try:
         return str(string)
     except UnicodeEncodeError:
         return string.encode('utf-8')
 
+
 def convert_params_to_byte_str(params):
     converted_params = {}
-    for key,value in params.items():
+    for key, value in params.items():
         if isinstance(key, text_type):
             key = safe_unicode_to_str(key)
         if isinstance(value, text_type):
@@ -72,17 +76,19 @@ class TransactionAPI(object):
     def _make_call(self, params):
         params = convert_params_to_byte_str(params)
         params = urlencode(params)
-        url = '{0}?{1}'.format(self.url, params)
         try:
-            resource = urlopen(url)
+            resource = urlopen(self.url, data=params)
             response = resource.read().decode(
                 get_content_charset(resource) or DEFAULT_CHARSET)
         except IOError as e:
             raise AuthorizeConnectionError(e)
         fields = parse_response(response)
         if fields['response_code'] != '1':
-            e = AuthorizeResponseError('%s full_response=%r' %
-                (fields['response_reason_text'], fields))
+            e = AuthorizeResponseError(
+                '{0} full_response={1!r}'.format(
+                    fields['response_reason_text'], fields
+                )
+            )
             e.full_response = fields
             raise e
         return fields
