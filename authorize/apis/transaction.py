@@ -20,6 +20,7 @@ RESPONSE_FIELDS = {
     11: 'transaction_type',
     38: 'cvv_response',
 }
+API_BOOL = ('FALSE', 'TRUE')
 
 DEFAULT_CHARSET = 'iso-8859-1'
 
@@ -64,8 +65,8 @@ class TransactionAPI(object):
             'x_login': login_id,
             'x_tran_key': transaction_key,
             'x_version': '3.1',
-            'x_test_request': 'TRUE' if test else 'FALSE',
-            'x_delim_data': 'TRUE',
+            'x_test_request': API_BOOL[test],
+            'x_delim_data': API_BOOL[True],
             'x_delim_char': ';',
         }
 
@@ -87,15 +88,9 @@ class TransactionAPI(object):
             raise e
         return fields
 
-    def _add_params(self, params, credit_card=None, address=None, email=None):
-        if credit_card:
-            params.update({
-                'x_card_num': credit_card.card_number,
-                'x_exp_date': credit_card.expiration.strftime('%m-%Y'),
-                'x_card_code': credit_card.cvv,
-                'x_first_name': credit_card.first_name,
-                'x_last_name': credit_card.last_name,
-            })
+    def _add_params(self, params, account=None, address=None, email=None):
+        if account:
+            params.update(account.transaction_params())
 
         if email:
             params['x_email'] = email
@@ -165,4 +160,14 @@ class TransactionAPI(object):
         params = self.base_params.copy()
         params['x_type'] = 'VOID'
         params['x_trans_id'] = transaction_id
+        return self._make_call(params)
+
+    def echeck_web(self, amount, echeck_account, address=None, email=None, recurring=False):
+        amount = Decimal(str(amount)).quantize(Decimal('0.01'))
+        params = self.base_params.copy()
+        params = self._add_params(params, echeck_account, address, email)
+        params['x_method'] = 'ECHECK'
+        params['x_echeck_type'] = 'WEB'
+        params['x_amount'] = str(amount)
+        params['x_recurring_billing'] = API_BOOL[recurring]
         return self._make_call(params)

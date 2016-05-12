@@ -3,9 +3,9 @@ from datetime import date
 import mock
 from unittest2 import TestCase
 
-from authorize import Address, AuthorizeClient, CreditCard
-from authorize.client import AuthorizeCreditCard, AuthorizeRecurring, \
-    AuthorizeSavedCard, AuthorizeTransaction
+from authorize import Address, AuthorizeClient, CreditCard, ECheckAccount
+from authorize.client import AuthorizeCreditCard, AuthorizeECheck, \
+    AuthorizeRecurring, AuthorizeSavedCard, AuthorizeTransaction
 from test_api_customer import PROFILE
 
 
@@ -20,6 +20,19 @@ TRANSACTION_RESULT = {
     'response_reason_text': 'This transaction has been approved.',
     'transaction_id': '2171062816',
 }
+
+ECHECK_TRANSACTION_RESULT = {
+    'avs_response': 'P',
+    'amount': '10.00',
+    'authorization_code': '',
+    'response_code': '1',
+    'cvv_response': '',
+    'response_reason_text': 'This transaction has been approved.',
+    'transaction_id': '2239207440',
+    'transaction_type': 'auth_capture',
+    'response_reason_code': '1'
+}
+
 
 class ClientTests(TestCase):
     def setUp(self):
@@ -37,6 +50,8 @@ class ClientTests(TestCase):
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911',
             'Jeff', 'Schenck')
         self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
+        self.echeck_account = ECheckAccount('021000021', '1234567890',
+            'checking', 'First Bank', 'John Doe')
 
     def tearDown(self):
         self.transaction_api_patcher.stop()
@@ -232,3 +247,13 @@ class ClientTests(TestCase):
         recurring.delete()
         self.assertEqual(self.client._recurring.delete_subscription.call_args,
             (('123',), {}))
+
+    def test_authorize_echeck_web(self):
+        self.client._transaction.echeck_web.return_value = ECHECK_TRANSACTION_RESULT
+        echeck = self.client.echeck(self.echeck_account)
+        result = echeck.web(10)
+        self.assertEqual(self.client._transaction.echeck_web.call_args,
+            ((10, self.echeck_account, None, None, False), {}))
+        self.assertTrue(isinstance(result, AuthorizeTransaction))
+        self.assertEqual(result.uid, '2239207440')
+        self.assertEqual(result.full_response, ECHECK_TRANSACTION_RESULT)

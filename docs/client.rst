@@ -7,7 +7,7 @@ Authorize client
 ----------------
 
 .. autoclass:: authorize.client.AuthorizeClient
-    :members: card, transaction, saved_card, recurring
+    :members: card, transaction, saved_card, recurring, echeck
 
 Credit card
 -----------
@@ -32,3 +32,9 @@ Recurring charge
 
 .. autoclass:: authorize.client.AuthorizeRecurring
     :members: update, delete
+
+eCheck
+------
+
+.. autoclass:: authorize.client.AuthorizeECheck
+    :members: web

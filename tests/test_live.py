@@ -8,7 +8,7 @@ import random
 
 from unittest2 import skipUnless, TestCase
 
-from authorize import Address, AuthorizeClient, CreditCard
+from authorize import Address, AuthorizeClient, CreditCard, ECheckAccount
 from authorize.exceptions import AuthorizeResponseError
 
 
@@ -27,14 +27,19 @@ class AuthorizeLiveTests(TestCase):
     def setUp(self):
         # Random in testing feels gross, otherwise running the same test
         # suite in quick succession produces failures because Authorize.net
-        # thinks the transactions are duplicates and rejects them
-        self.amount1 = random.randrange(100, 100000) / 100.0
-        self.amount2 = random.randrange(100, 100000) / 100.0
+        # thinks the transactions are duplicates and rejects them.
+        #
+        # Sandbox accounts have a default eCheck.Net Maximum Transaction Size
+        # of $100.00, so use that as our maximum.
+        self.amount1 = random.randrange(100, 10000) / 100.0
+        self.amount2 = random.randrange(100, 10000) / 100.0
         self.client = AuthorizeClient(TEST_LOGIN_ID, TEST_TRANSACTION_KEY)
         self.year = date.today().year + 10
         self.credit_card = CreditCard('4111111111111111', self.year, 1, '911',
             'Jeff', 'Schenck')
         self.address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
+        self.echeck_account = ECheckAccount('021000021', '1234567890',
+            'checking', 'First Bank', 'John Doe')
 
     def test_credit_card(self):
         card = self.client.card(self.credit_card, self.address)
@@ -74,3 +79,9 @@ class AuthorizeLiveTests(TestCase):
         recurring.update(amount=self.amount2, trial_amount=self.amount2 - 0.5, trial_occurrences=3)
         recurring_from_id = self.client.recurring(recurring.uid)
         recurring_from_id.delete()
+
+    def test_echeck(self):
+        echeck = self.client.echeck(self.echeck_account)
+        transaction = echeck.web(self.amount1)
+        transaction.void()
+        self.assertRaises(AuthorizeResponseError, transaction.settle)

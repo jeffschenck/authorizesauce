@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 
 from unittest2 import TestCase
 
-from authorize.data import Address, CreditCard
+from authorize.data import Address, CreditCard, ECheckAccount
 from authorize.exceptions import AuthorizeInvalidError
 
 
@@ -61,3 +61,38 @@ class AddressTests(TestCase):
     def test_basic_address(self):
         address = Address('45 Rose Ave', 'Venice', 'CA', '90291')
         repr(address)
+
+
+class ECheckTests(TestCase):
+    # Taken from https://www.wepay.com/developer/reference/testing
+    # Authorize.Net forum posts say any routing number will work for testing.
+    ROUTING_NUMBER = '021000021'
+
+    def test_safe_routing_number(self):
+        echeck = ECheckAccount(self.ROUTING_NUMBER, '1234567890',
+            bank_name='First Bank', account_name='John Doe')
+        self.assertEqual(echeck.safe_routing_number, 'XXXX0021')
+
+    def test_safe_account_number(self):
+        echeck = ECheckAccount(self.ROUTING_NUMBER, '1234567890',
+            bank_name='First Bank', account_name='John Doe')
+        self.assertEqual(echeck.safe_account_number, 'XXXX7890')
+
+    def test_account_validation(self):
+        # Too-long and too-short routing numbers
+        self.assertRaisesRegexp(AuthorizeInvalidError, '(?i)routing number',
+            ECheckAccount, '12345678', '123456', 'checking', 'First Bank', 'John Doe')
+        self.assertRaisesRegexp(AuthorizeInvalidError, '(?i)routing number',
+            ECheckAccount, '1234567890', '123456', 'checking', 'First Bank', 'John Doe')
+
+        # Account number, type
+        self.assertRaisesRegexp(AuthorizeInvalidError, '(?i)account number',
+            ECheckAccount, '123456789', 'not-a-number', 'checking', 'First Bank', 'John Doe')
+        self.assertRaisesRegexp(AuthorizeInvalidError, '(?i)account type',
+            ECheckAccount, '123456789', '123456', 'freemoney', 'First Bank', 'John Doe')
+
+        # Names
+        self.assertRaisesRegexp(AuthorizeInvalidError, '(?i)bank name',
+            ECheckAccount, '123456789', '123456', 'checking', None, 'John Doe')
+        self.assertRaisesRegexp(AuthorizeInvalidError, '(?i)account name',
+            ECheckAccount, '123456789', '123456', 'checking', 'First Bank', None)

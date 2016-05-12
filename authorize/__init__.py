@@ -37,6 +37,6 @@ test
 """
 
 from authorize.client import AuthorizeClient
-from authorize.data import Address, CreditCard
+from authorize.data import Address, CreditCard, ECheckAccount
 from authorize.exceptions import AuthorizeConnectionError, AuthorizeError, \
     AuthorizeInvalidError, AuthorizeResponseError
