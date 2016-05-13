@@ -1,5 +1,5 @@
 from decimal import Decimal
-from six import PY2, text_type
+from six import PY2, b, text_type
 from six.moves.urllib.parse import urlencode
 from six.moves.urllib.request import urlopen
 
@@ -77,7 +77,7 @@ class TransactionAPI(object):
         params = convert_params_to_byte_str(params)
         params = urlencode(params)
         try:
-            resource = urlopen(self.url, data=params)
+            resource = urlopen(self.url, data=b(params))
             response = resource.read().decode(
                 get_content_charset(resource) or DEFAULT_CHARSET)
         except IOError as e:
