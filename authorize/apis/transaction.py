@@ -9,6 +9,8 @@ from authorize.exceptions import AuthorizeConnectionError, \
 
 PROD_URL = 'https://secure.authorize.net/gateway/transact.dll'
 TEST_URL = 'https://test.authorize.net/gateway/transact.dll'
+PROD_URL_USAEPAY = 'https://secure.usaepay.com/gateway/transact.dll'
+TEST_URL_USAEPAY = 'https://sandboy.usaepay.com/gateway/transact.dll'
 RESPONSE_FIELDS = {
     0: 'response_code',
     2: 'response_reason_code',
@@ -62,8 +64,11 @@ def convert_params_to_byte_str(params):
 
 
 class TransactionAPI(object):
-    def __init__(self, login_id, transaction_key, debug=True, test=False):
-        self.url = TEST_URL if debug else PROD_URL
+    def __init__(self, login_id, transaction_key, debug=True, test=False, usaepay=False):
+        if not usaepay:
+            self.url = TEST_URL if debug else PROD_URL
+        else:
+            self.url = TEST_URL_USAEPAY if debug else PROD_URL_USAEPAY
         self.base_params = {
             'x_login': login_id,
             'x_tran_key': transaction_key,
