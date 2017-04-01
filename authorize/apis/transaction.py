@@ -146,7 +146,7 @@ class TransactionAPI(object):
             params['x_amount'] = str(amount)
         return self._make_call(params)
 
-    def credit(self, card_num, transaction_id, amount):
+    def credit(self, card_num, transaction_id, amount, address=None):
         # Authorize.net can do unlinked credits (not tied to a previous
         # transaction) but we do not (at least for now).
         # Provide the last four digits for the card number, as well as the
@@ -160,6 +160,7 @@ class TransactionAPI(object):
         # - The credit must be submitted within 120 days of the original
         #   transaction being settled.
         params = self.base_params.copy()
+        params = self._add_params(params, address=address)
         params['x_type'] = 'CREDIT'
         params['x_trans_id'] = transaction_id
         params['x_card_num'] = str(card_num)
